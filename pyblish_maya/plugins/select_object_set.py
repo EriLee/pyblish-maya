@@ -2,6 +2,10 @@ import pyblish.backend.lib
 import pyblish.backend.config
 import pyblish.backend.plugin
 
+# Local library
+import pyblish_maya.lib
+
+# Host library
 import maya.cmds as cmds
 
 
@@ -19,13 +23,13 @@ class SelectObjectSet(pyblish.backend.plugin.Selector):
     hosts = ['maya']
     version = (0, 1, 0)
 
-    def process(self, context):
+    def process_context(self, context):
         for objset in cmds.ls("*." + pyblish.backend.config.identifier,
+                              recursive=True,
                               objectsOnly=True,
                               type='objectSet'):
 
             instance = context.create_instance(name=objset)
-            self.log.info("Adding instance: {0}".format(objset))
 
             for node in cmds.sets(objset, query=True):
                 if cmds.nodeType(node) == 'transform':
@@ -36,21 +40,4 @@ class SelectObjectSet(pyblish.backend.plugin.Selector):
 
                 instance.add(node)
 
-            attrs = cmds.listAttr(objset, userDefined=True)
-            for attr in attrs:
-                if attr == pyblish.backend.config.identifier:
-                    continue
-
-                try:
-                    value = cmds.getAttr(objset + "." + attr)
-                except:
-                    continue
-
-                # Allow name to be overriden via attribute.
-                if attr == 'name':
-                    instance.name = value
-                    continue
-
-                instance.config[attr] = value
-
-            yield instance, None
+            pyblish_maya.lib.collect_attributes(node=objset, instance=instance)
