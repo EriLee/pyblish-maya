@@ -1,5 +1,6 @@
-
 import pyblish.backend.plugin
+
+from maya import cmds
 
 
 class ValidateReviewInstances(pyblish.backend.plugin.Validator):
@@ -12,10 +13,10 @@ class ValidateReviewInstances(pyblish.backend.plugin.Validator):
     families = ['review']
     hosts = ['maya']
 
-    def process(self, context):
-        instances_by_plugin = pyblish.backend.plugin.instances_by_plugin
-        compatible_instances = instances_by_plugin(instances=context,
-                                                   plugin=self)
-        for instance in compatible_instances:
-            print "Running reviewvalidator on %s" % instance
-            yield instance, None
+    def process_instance(self, instance):
+        cameras = cmds.ls(type='camera')
+        for camera in cameras:
+            if camera in instance:
+                return
+
+        raise ValueError("No camera found in instance: {0}".format(instance))
